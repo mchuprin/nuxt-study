@@ -8,11 +8,12 @@
         <img src="~/assets/list.svg">
       </button>
     </div>
-    <form>
+    <div>
       <input
         id="file"
         ref="file"
         type="file"
+        class="file-input"
         multiple
         @change="uploadFile"
       />
@@ -29,7 +30,7 @@
           :style="{ backgroundImage: `url(${file})` }" >
         </div>
       </label>
-    </form>
+    </div>
   </div>
 
 </template>
@@ -42,21 +43,19 @@ export default {
   layout: "Layout",
   setup() {
     const files = ref()
-    const uploadedFiles = ref(null)
     const { $axios } = useContext();
 
     $axios.get('/api/files', )
       .then(value => files.value = value.data)
 
-    watch(files, (v) => console.log(v))
-
     const uploadFile = (e) => e.target.files;
     const dragFile = async (e) => {
-      let data = new FormData();
-      console.log(e.dataTransfer.files)
-      data.append('file', e.dataTransfer.files[0])
+      let formData = new FormData();
+      [...e.dataTransfer.files].forEach((file, index) => {
+        formData.append(`file${index+1}`, file)
+      })
       await $axios.post( '/api/files',
-        data,
+        formData,
         {
           headers: {
             'Content-Type': 'multipart/form-data'
@@ -64,7 +63,7 @@ export default {
         }
       )
     }
-    return { uploadFile, dragFile, files, uploadedFiles }
+    return { uploadFile, dragFile, files }
   }
 }
 </script>
@@ -77,6 +76,9 @@ export default {
       height: 35px;
     }
   }
+}
+.file-input {
+  display: none;
 }
 .drop-zone {
   padding: 10px;
