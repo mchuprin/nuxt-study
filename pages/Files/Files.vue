@@ -11,11 +11,9 @@
     <div>
       <input
         id="file"
-        ref="file"
         type="file"
         class="file-input"
         multiple
-        @change="uploadFile"
       />
       <label
         @dragover.prevent
@@ -36,26 +34,23 @@
 </template>
 
 <script>
-import { ref, useContext, watch } from "@nuxtjs/composition-api";
+import { ref, useContext } from "@nuxtjs/composition-api";
+import { useFilesToFormData } from "@/composables/useFiles";
 
 export default {
   name: "files",
   layout: "Layout",
   setup() {
-    const files = ref()
+    const files = ref();
     const { $axios } = useContext();
 
     $axios.get('/api/files', )
       .then(value => files.value = value.data)
 
-    const uploadFile = (e) => e.target.files;
     const dragFile = async (e) => {
-      let formData = new FormData();
-      [...e.dataTransfer.files].forEach((file, index) => {
-        formData.append(`file${index+1}`, file)
-      })
+      const filesToSend = useFilesToFormData(e.dataTransfer.files)
       await $axios.post( '/api/files',
-        formData,
+        filesToSend,
         {
           headers: {
             'Content-Type': 'multipart/form-data'
@@ -63,7 +58,7 @@ export default {
         }
       )
     }
-    return { uploadFile, dragFile, files }
+    return { dragFile, files }
   }
 }
 </script>
