@@ -8,13 +8,13 @@
         <img src="~/assets/list.svg">
       </button>
     </div>
-    <form>
+    <div v-if="gettingFilesLoading || sendingFilesLoading">Dear loading...</div>
+    <div>
       <input
         id="file"
-        ref="file"
         type="file"
+        class="file-input"
         multiple
-        @change="uploadFile"
       />
       <label
         @dragover.prevent
@@ -22,49 +22,48 @@
         for="file"
         class="drop-zone"
         @drop="dragFile">
-        <div
-          v-if="files"
-          v-for="file in files"
-          class="drop-zone__file-preview"
-          :style="{ backgroundImage: `url(${file})` }" >
-        </div>
+        <TransitionGroup name="images">
+          <div
+            v-for="(file, index) in files"
+            :key="index"
+            class="drop-zone__file-preview"
+            :style="{ backgroundImage: `url(${file})` }"
+          >
+          </div>
+        </TransitionGroup>
       </label>
-    </form>
+    </div>
   </div>
 
 </template>
 
 <script>
-import { ref, useContext, watch } from "@nuxtjs/composition-api";
+import { onMounted, ref } from "@nuxtjs/composition-api";
+import { useGetFiles, useSendFiles } from "@/composables/useFiles";
 
 export default {
   name: "files",
   layout: "Layout",
   setup() {
-    const files = ref()
-    const uploadedFiles = ref(null)
-    const { $axios } = useContext();
+    const { fetch: getFiles, result: gotFiles, error: gettingFilesError, isLoading: gettingFilesLoading } = useGetFiles();
+    const { fetch: sendFiles, result: sentFiles, error: sendingFilesError, isLoading: sendingFilesLoading } = useSendFiles();
 
-    $axios.get('/api/files', )
-      .then(value => files.value = value.data)
+    const files = ref([]);
 
-    watch(files, (v) => console.log(v))
+    onMounted(async () => {
+      await getFiles();
+      files.value = gotFiles.value;
+    })
 
-    const uploadFile = (e) => e.target.files;
     const dragFile = async (e) => {
-      let data = new FormData();
-      console.log(e.dataTransfer.files)
-      data.append('file', e.dataTransfer.files[0])
-      await $axios.post( '/api/files',
-        data,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        }
-      )
+      const data = new FormData();
+      [...e.dataTransfer.files].forEach((file, index) => {
+        data.append(`file${index+1}`, file)
+      })
+      await sendFiles(data);
+      files.value.unshift(sentFiles.value);
     }
-    return { uploadFile, dragFile, files, uploadedFiles }
+    return { dragFile, files, gettingFilesLoading, sendingFilesLoading }
   }
 }
 </script>
@@ -77,6 +76,9 @@ export default {
       height: 35px;
     }
   }
+}
+.file-input {
+  display: none;
 }
 .drop-zone {
   padding: 10px;
@@ -94,5 +96,14 @@ export default {
     width: 100px;
     height: 100px;
   }
+}
+.images-enter-active,
+.images-leave-active {
+  transition: all 0.5s ease;
+}
+.images-enter-from,
+.images-leave-to {
+  opacity: 0;
+  transform: translateX(30px);
 }
 </style>
