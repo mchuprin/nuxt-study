@@ -6,7 +6,7 @@ export const useGetFiles = () => {
   const result = ref(null);
   const error = ref(null);
 
-  const fetch = async () => {
+  const fetch = async (): Promise<void> => {
     isLoading.value = true;
     error.value = null;
     try {
@@ -19,7 +19,7 @@ export const useGetFiles = () => {
       isLoading.value = false;
     }
   }
-  return { getFiles: fetch, gotFiles: result, gettingFilesError: error, gettingFilesLoading: isLoading }
+  return { fetch, result, error, isLoading }
 }
 
 export const useSendFiles = () => {
@@ -28,7 +28,7 @@ export const useSendFiles = () => {
   const result = ref(null);
   const error = ref(null);
 
-  const fetch = async(data: any) => {
+  const fetch = async(data: FormData): Promise<void> => {
     isLoading.value = true;
     error.value = null;
     try {
@@ -48,6 +48,6 @@ export const useSendFiles = () => {
       isLoading.value = false;
     }
   }
-  return { sendFiles: fetch, sentFiles: result, sendingFilesError: error, sendingFilesLoading: isLoading }
+  return { fetch, result, error, isLoading }
 }
 
