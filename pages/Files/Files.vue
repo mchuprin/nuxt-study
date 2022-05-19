@@ -11,6 +11,8 @@
     <div v-if="gettingFilesLoading || sendingFilesLoading">Dear loading...</div>
     <div>
       <input
+        @click.prevent
+        accept="image/png, image/gif, image/jpeg"
         id="file"
         type="file"
         class="file-input"
@@ -20,16 +22,20 @@
         @dragover.prevent
         @drop.prevent @drag
         for="file"
-        class="drop-zone"
         @drop="dragFile">
-        <TransitionGroup name="images">
+        <TransitionGroup class="drop-zone" name="images">
           <div
             v-for="(file, index) in files"
-            :key="index"
-            class="drop-zone__file-preview"
+            :key="index+file"
+            class="drop-zone__file-view"
             :style="{ backgroundImage: `url(${file})` }"
-          >
-          </div>
+          ></div>
+          <div
+            v-for="(preview, index) in filesPreview"
+            :key="index+preview"
+            class="drop-zone__file-preview"
+            :style="{ backgroundImage: `url(${preview})` }"
+          ></div>
         </TransitionGroup>
       </label>
     </div>
@@ -49,21 +55,25 @@ export default {
     const { fetch: sendFiles, result: sentFiles, error: sendingFilesError, isLoading: sendingFilesLoading } = useSendFiles();
 
     const files = ref([]);
+    const filesPreview = ref([]);
 
     onMounted(async () => {
       await getFiles();
-      files.value = gotFiles.value;
+      files.value = gotFiles.value.reverse();
     })
 
     const dragFile = async (e) => {
       const data = new FormData();
       [...e.dataTransfer.files].forEach((file, index) => {
+        filesPreview.value.push(URL.createObjectURL(file))
         data.append(`file${index+1}`, file)
       })
       await sendFiles(data);
-      files.value.unshift(sentFiles.value);
+      filesPreview.value = [];
+      URL.revokeObjectURL(filesPreview.value)
+      sentFiles.value.forEach(file => files.value.push(file))
     }
-    return { dragFile, files, gettingFilesLoading, sendingFilesLoading }
+    return { dragFile, files, gettingFilesLoading, sendingFilesLoading, filesPreview }
   }
 }
 </script>
@@ -80,19 +90,28 @@ export default {
 .file-input {
   display: none;
 }
+
 .drop-zone {
   padding: 10px;
-  display: flex;
-  flex-direction: row;
-  width: 80%;
-  min-height: 200px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  width: max-content;
+  min-height: max-content;
   border: solid white 2px;
   border-radius: 20px;
   &__file-preview {
     border-radius: 10px;
     background-size: cover;
+    opacity: 0.5;
     background-position: center;
-    margin-right: 10px;
+    width: 100px;
+    height: 100px;
+  }
+  &__file-view {
+    border-radius: 10px;
+    background-size: cover;
+    background-position: center;
     width: 100px;
     height: 100px;
   }

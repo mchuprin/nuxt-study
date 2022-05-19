@@ -20,5 +20,10 @@ export default Vue.extend({
   width: 100%;
   min-height: 100vh;
   background: #e49255;
+  .content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
 }
 </style>
