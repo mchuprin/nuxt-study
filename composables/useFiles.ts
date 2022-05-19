@@ -1,4 +1,4 @@
-import { ref, useContext } from '@nuxtjs/composition-api';
+import {ref, useContext, useStore} from '@nuxtjs/composition-api';
 
 export const useGetFiles = () => {
   const { $axios } = useContext();
@@ -49,5 +49,26 @@ export const useSendFiles = () => {
     }
   }
   return { fetch, result, error, isLoading }
+}
+
+export const useDeleteFiles = () => {
+  const { getters } = useStore();
+  const { $axios } = useContext();
+
+  const isLoading = ref(false);
+  const error = ref(null);
+
+  const fetch = async (): Promise<void> => {
+    isLoading.value = true;
+    error.value = null;
+    try {
+      await $axios.delete(`/api/files?files=${getters.getSelectedFiles.join(',')}`)
+    } catch (e) {
+      error.value = e;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+  return { fetch, error, isLoading }
 }
 

@@ -27,6 +27,8 @@
           <div
             v-for="(file, index) in files"
             :key="index+file"
+            @click.ctrl="selectFile(file)"
+            :class="{ 'drop-zone__file-view_selected': getters.getSelectedFiles.find(selectedFile => selectedFile === file) }"
             class="drop-zone__file-view"
             :style="{ backgroundImage: `url(${file})` }"
           ></div>
@@ -39,20 +41,27 @@
         </TransitionGroup>
       </label>
     </div>
+    <div v-if="getters.getSelectedFiles.length > 0">
+      <p>Выбрано файлов: {{ getters.getSelectedFiles.length }}</p>
+      <button @click="removeFiles">Удалить</button>
+    </div>
   </div>
 
 </template>
 
 <script>
-import { onMounted, ref } from "@nuxtjs/composition-api";
-import { useGetFiles, useSendFiles } from "@/composables/useFiles";
+import { onMounted, ref, useStore } from "@nuxtjs/composition-api";
+import { useDeleteFiles, useGetFiles, useSendFiles } from "@/composables/useFiles";
 
 export default {
   name: "files",
   layout: "Layout",
   setup() {
+    const { getters, commit } = useStore();
+
     const { fetch: getFiles, result: gotFiles, error: gettingFilesError, isLoading: gettingFilesLoading } = useGetFiles();
     const { fetch: sendFiles, result: sentFiles, error: sendingFilesError, isLoading: sendingFilesLoading } = useSendFiles();
+    const { fetch: deleteFiles, error: deletingFilesError, isLoading: deletingFilesLoading } = useDeleteFiles();
 
     const files = ref([]);
     const filesPreview = ref([]);
@@ -73,7 +82,30 @@ export default {
       URL.revokeObjectURL(filesPreview.value)
       sentFiles.value.forEach(file => files.value.push(file))
     }
-    return { dragFile, files, gettingFilesLoading, sendingFilesLoading, filesPreview }
+
+    const selectFile = (file) => {
+      if (getters.getSelectedFiles.find(selectedFile => selectedFile === file)) {
+        return commit('removeSelectedFile', file)
+      }
+      commit('addSelectedFile', file)
+    }
+
+    const removeFiles = async () => {
+      await deleteFiles();
+      files.value = files.value.filter(file => !file.includes(getters.getSelectedFiles))
+      commit('clearSelectedFiles');
+    }
+
+    return {
+      selectFile,
+      removeFiles,
+      dragFile,
+      files,
+      gettingFilesLoading,
+      sendingFilesLoading,
+      filesPreview,
+      getters
+    }
   }
 }
 </script>
@@ -114,6 +146,9 @@ export default {
     background-position: center;
     width: 100px;
     height: 100px;
+    &_selected {
+      outline: solid deepskyblue 2px;
+    }
   }
 }
 .images-enter-active,

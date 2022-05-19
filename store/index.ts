@@ -1,21 +1,26 @@
-import IFile from '~/interfaces/IFile';
-
 export const state = () => ({
-  files: [] as IFile[]
+  selectedFiles: [],
 })
 
 export const mutations = {
-  addFile(state: any, file: IFile) {
-    state.files.push(file)
+  addSelectedFile(state, file) {
+    console.log(file)
+    state.selectedFiles.push(file)
   },
-  deleteFile(state: any, fileId: string) {
-    state.files = state.files.filter((file: IFile) => file.id !== fileId)
+  removeSelectedFile(state, file) {
+    console.log(file)
+    state.selectedFiles = state.selectedFiles.filter(selectedFile => selectedFile !== file)
+    console.log(state.selectedFiles)
+  },
+  clearSelectedFiles(state) {
+    state.selectedFiles = [];
   }
 }
-
 
 export const actions = {}
 
 export const getters = {
-  getFiles: (state: any) => state.files
+  getSelectedFiles(state) {
+    return state.selectedFiles;
+  }
 }
